@@ -7,7 +7,11 @@
   "author": "Nahidul Islam",
   "scripts": {
     "start": "node index.js",
-    "watch": "nodemon index.js"
+    "watch": "nodemon index.js",
+    "build:ui": "rm -rf build && cd ../full_stack_web/part2/phonebook/ && yarn build && cp -r build ../../../phonebook/",
+    "deploy": "git push heroku master",
+    "deploy:full": "yarn build:ui && git add . && git commit -m uibuild && git push && yarn deploy",    
+    "logs:prod": "heroku logs --tail"
   },
   "license": "MIT",
   "private": false,
