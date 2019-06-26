@@ -50,8 +50,9 @@ app.post('/api/persons', (req, res) => {
         return res.status(400).json({error: 'Number is missing'})
     if(persons.find(person => person.name === req.body.name))
         return res.status(400).json({error: 'Name should be unique'})
-    persons = [...persons, {...req.body, id: Math.round(Math.random() * 100)}]
-    return res.status(204).end()
+    const newPerson = {...req.body, id: Math.round(Math.random() * 100)}
+    persons = [...persons, newPerson]
+    return res.json(newPerson)
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -60,7 +61,7 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 const unKnownEndPoint = (req, res) => {
-    res.status(404).json({error: 'invalid endpoint.'})
+    return res.status(404).json({error: 'invalid endpoint.'})
 }
 
 app.use(unKnownEndPoint)
