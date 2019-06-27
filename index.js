@@ -1,3 +1,5 @@
+// import required libraries and files
+
 require('dotenv').config()
 const express = require('express')
 const bodyParse = require('body-parser')
@@ -5,31 +7,28 @@ const morgan = require('morgan')
 const mongoose = require('mongoose')
 const Person = require('./models/person')
 const app = express()
+
+// declare constansts
 const PORT = process.env.PORT
     
 app.use(express.static('build'))   
 app.use(bodyParse.json())
-morgan.token('body', function (req, res) { return JSON.stringify(req.body) })
+morgan.token('body', (req, res) => req.body ? JSON.stringify(req.body) : '')
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms - :body'))
 
+// routes
 
 app.get('/api/persons', (req, res) => {
     Person.find({}).then(persons => {
-        return res.json(persons.map(person => person.toJSON()))
+        res.json(persons.map(person => person.toJSON()))
     })
-})
-
-app.get('/info', (req, res) => {
-    return res.send(
-        `<p>Phonebook has the info of ${persons.length} persons.</p>
-         <p>${new Date()}</p>`
-    )
 })
 
 app.get('/api/persons/:id', (req, res) => {
-    Person.find({id: req.id}).then(person => {
-        return res.json(person.toJSON())
-    })
+    Person
+        .findById(req.params.id)
+        .then(person => person ? res.json(person.toJSON()) : res.status(404).end())
+        .catch(error => res.status(400).json({error: 'Malformed ID Provided.'}))
 })
 
 app.post('/api/persons', (req, res) => {
@@ -49,10 +48,34 @@ app.post('/api/persons', (req, res) => {
     })
 })
 
-app.delete('/api/persons/:id', (req, res) => {
-    persons = persons.filter(person => person.id !== Number(req.params.id))
-    return res.status(204).end()
+app.put('/api/persons/:id', (req, res, next) => {
+    Person.findByIdAndUpdate(req.params.id, {name: req.body.name, number: req.body.number}, {new: true})
+        .then(person => res.json(person.toJSON()))
+        .catch(error => next(error))
 })
+
+app.delete('/api/persons/:id', (req, res) => {
+    Person.deleteOne({_id: req.params.id}, (error, result) => {
+        if(error) {
+            return res.json({message: `${id} is already removed from the server.`})
+        }
+        else {
+            return res.json(result)
+        }
+    })
+})
+
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+  
+    if (error.name === 'CastError' && error.kind == 'ObjectId') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+  
+    next(error)
+  }
+  
+app.use(errorHandler)
 
 const unKnownEndPoint = (req, res) => {
     return res.status(404).json({error: 'invalid endpoint.'})
